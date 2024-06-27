@@ -49,7 +49,7 @@ class Data:
 
 if __name__ == "__main__":
     data = Data.get_instance()
-    data.load("data.txt")  # Replace with your actual data file name
+    data.load("data/nu_oph.txt")  # Replace with your actual data file name
 
     t_data = data.get_t()
     y_data = data.get_y()

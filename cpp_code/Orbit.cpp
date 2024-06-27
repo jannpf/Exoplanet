@@ -78,7 +78,7 @@ vector<double> Orbit::evaluate(const std::vector<double>& arg_to_cos,
 void Orbit::test()
 {
 	Orbit o;
-	o.load("Orbits/orbits0.710.dat");
+	o.load("orbits/orbits0.710.dat");
 
 	vector<double> t;
 	for(double tt=-10; tt <= 10; tt += 0.01)

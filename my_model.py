@@ -10,16 +10,23 @@ from lookup import Lookup
 from my_distribution import MyDistribution
 
 
-class RJObject:
-    def __init__(self, num_dimensions, max_num_components, fixed, conditional_prior):
+class MyModel:
+    def __init__(
+        self,
+        num_dimensions=5,
+        max_num_components=10,
+        fixed=False,
+        conditional_prior=None,
+    ):
         self.num_dimensions = num_dimensions
         self.max_num_components = max_num_components
         self.fixed = fixed
-        self.conditional_prior = conditional_prior
+        self.conditional_prior = conditional_prior or MyDistribution()
         self.components = []
         self.u_components = []
 
-    def from_prior(self, rng):
+    def from_prior(self, rng=None):
+        rng = rng or np.random.default_rng()
         self.components.clear()
         self.u_components.clear()
 
@@ -35,91 +42,26 @@ class RJObject:
             self.conditional_prior.from_uniform(component)
             self.components.append(component)
 
-    def perturb(self, rng):
-        logH = 0.0
-
-        if rng.random() < 0.5 and not self.fixed:
-            if rng.random() < 0.5 and len(self.components) < self.max_num_components:
-                component = rng.random(self.num_dimensions)
-                self.u_components.append(component.copy())
-                self.conditional_prior.from_uniform(component)
-                self.components.append(component)
-            elif len(self.components) > 0:
-                idx = rng.integers(len(self.components))
-                self.components.pop(idx)
-                self.u_components.pop(idx)
-            logH = 0.0
-        else:
-            if len(self.components) > 0:
-                idx = rng.integers(len(self.components))
-                self.u_components[idx] += rng.random(self.num_dimensions)
-                self.u_components[idx] %= 1.0
-                self.components[idx] = self.u_components[idx].copy()
-                self.conditional_prior.from_uniform(self.components[idx])
-            logH = 0.0
-
-        return logH
-
-    def get_components(self):
-        return self.components
-
-    def print(self, out=sys.stdout):
-        for component in self.components:
-            out.write(" ".join(map(str, component)) + " ")
-        out.write("\n")
-
-
-class MyModel:
-    def __init__(self):
-        self.objects = RJObject(5, 10, False, MyDistribution())
-
-    def from_prior(self):
-        rng = np.random.default_rng()
-        self.objects.from_prior(rng)
         data_instance = Data.get_instance()
+        data_instance.load("data/nu_oph.txt")
         background = (
             data_instance.get_y_min()
             + (data_instance.get_y_max() - data_instance.get_y_min()) * rng.random()
         )
         extra_sigma = math.exp(math.tan(math.pi * (0.97 * rng.random() - 0.485)))
         nu = math.exp(math.log(0.1) + math.log(1000.0) * rng.random())
-        try:
-            obj = self.serialize_objects()
-            params = np.concatenate([obj, background, extra_sigma, nu])
-        except:
-            obj = 0
-            params = [obj, background, extra_sigma, nu]
+
+        obj = self.serialize_objects()
+        params = np.concatenate([obj, [background, extra_sigma, nu]])
         mu = self.calculate_mu(params)
 
         return np.concatenate([params, mu])
 
-    def calculate_mu(self, params):
-        t = np.array(Data.get_instance().get_t())
-        components = self.deserialize_objects(params[:-3])
-        background = params[-3]
-
-        mu = np.full(len(t), background)
-        for component in components:
-            T = math.exp(component[0])
-            A = component[1]
-            phi = component[2]
-            try:
-                v0 = math.sqrt(1.0 - component[3])
-            except:
-                v0 = 0
-            viewing_angle = component[4]
-
-            arg = 2.0 * math.pi * t / T + phi
-            evaluations = Lookup.get_instance().evaluate(arg, v0, viewing_angle)
-            # breakpoint()
-            mu += A * np.array(evaluations)
-        return mu
-
-    def perturb(self, params):
+    def perturb(self, params, rng=None):
         logH = 0.0
-        rng = np.random.default_rng()
+        rng = rng or np.random.default_rng()
         if rng.random() <= 0.75:
-            logH += self.objects.perturb(rng)
+            logH += self._perturb_components(rng)
             self.calculate_mu(params)
         elif rng.random() <= 0.5:
             params[-2] = np.log(params[-2])
@@ -175,7 +117,10 @@ class MyModel:
             T = math.exp(component[0])
             A = component[1]
             phi = component[2]
-            v0 = math.sqrt(1.0 - component[3])
+            try:
+                v0 = math.sqrt(1.0 - component[3])
+            except:
+                v0 = 0
             viewing_angle = component[4]
 
             arg = 2.0 * math.pi * finer_t / T + phi
@@ -184,20 +129,69 @@ class MyModel:
 
         np.savetxt(out, signal)
         out.write(f"{params[-2]} {params[-1]} ")
-        self.objects.print(out)
-        out.write(f"\n")
+        self._print_components(out)
+        out.write("\n")
 
-    def description(self):
-        return ""
+    def calculate_mu(self, params):
+        t = np.array(Data.get_instance().get_t())
+        components = self.deserialize_objects(params[:-3])
+        background = params[-3]
+
+        mu = np.full(len(t), background)
+        for component in components:
+            T = math.exp(component[0])
+            A = component[1]
+            phi = component[2]
+            try:
+                v0 = math.sqrt(1.0 - component[3])
+            except:
+                v0 = 0
+            viewing_angle = component[4]
+
+            arg = 2.0 * math.pi * t / T + phi
+            evaluations = Lookup.get_instance().evaluate(arg, v0, viewing_angle)
+            mu += A * np.array(evaluations)
+        return mu
 
     def serialize_objects(self):
-        return np.hstack(
-            [np.array(component) for component in self.objects.get_components()]
-        ).flatten()
+          return np.hstack([np.array(component) for component in self.components]).flatten()
 
     def deserialize_objects(self, array):
         components = []
-        num_components = len(array) // 5
+        num_components = len(array) // self.num_dimensions
         for i in range(num_components):
-            components.append(array[i * 5 : (i + 1) * 5])
+            components.append(array[i * self.num_dimensions : (i + 1) * self.num_dimensions])
         return components
+
+    def _perturb_components(self, rng):
+        logH = 0.0
+
+        if rng.random() < 0.5 and not self.fixed:
+            if rng.random() < 0.5 and len(self.components) < self.max_num_components:
+                component = rng.random(self.num_dimensions)
+                self.u_components.append(component.copy())
+                self.conditional_prior.from_uniform(component)
+                self.components.append(component)
+            elif len(self.components) > 0:
+                idx = rng.integers(len(self.components))
+                self.components.pop(idx)
+                self.u_components.pop(idx)
+            logH = 0.0
+        else:
+            if len(self.components) > 0:
+                idx = rng.integers(len(self.components))
+                self.u_components[idx] += rng.random(self.num_dimensions)
+                self.u_components[idx] %= 1.0
+                self.components[idx] = self.u_components[idx].copy()
+                self.conditional_prior.from_uniform(self.components[idx])
+            logH = 0.0
+
+        return logH
+
+    def _print_components(self, out=sys.stdout):
+        for component in self.components:
+            out.write(" ".join(map(str, component)) + " ")
+        out.write("\n")
+
+    def description(self):
+        return ""

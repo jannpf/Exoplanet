@@ -27,7 +27,7 @@ void Lookup::load()
 		stringstream ss(stringstream::out);
 		ss.precision(3);
 		ss<<fixed<<v0;
-		filename = string("Orbits/orbits" + ss.str() + ".dat");
+		filename = string("orbits/orbits" + ss.str() + ".dat");
 
 		o.load(filename.c_str());
 		orbits.push_back(o);

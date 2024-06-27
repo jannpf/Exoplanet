@@ -1,3 +1,21 @@
+"""
+This code essentially simulates the radial velocity curve
+of an orbiting body, which is a fundamental technique in detecting
+and studying exoplanets.
+
+
+Details:
+1. Set up time and orbital parameters.
+2. Compute eccentric anomaly E and true anomaly f to obtain rv from E.
+3. Plot and save the data to kepler.txt.
+
+The generated file kepler.txt contains two columns: the first column is time values 𝑡
+and the second column is the corresponding radial velocity 𝑣.
+This data likely represents the radial velocity of a star or planet over time,
+which is a common way to study exoplanetary systems using Kepler's laws of planetary motion.
+"""
+
+
 import pylab
 
 
@@ -38,7 +56,7 @@ def main():
 
     data = pylab.empty((10001, 2))
     data[:, 0], data[:, 1] = t, v
-    pylab.savetxt("kepler.txt", data)
+    pylab.savetxt("../artifacts/kepler.txt", data)
     pylab.show()
 
     # EQUIVALENCE

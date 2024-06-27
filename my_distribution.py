@@ -37,6 +37,11 @@ class MyDistribution:
         return logH
 
     def log_pdf(self, vec):
+        # vec[0] = "position" (log-period)
+        # vec[1] = amplitude
+        # vec[2] = phase
+        # vec[3] = v0
+        # vec[4] = viewing angle
         if (
             vec[1] < 0.0
             or vec[2] < 0.0
@@ -91,7 +96,7 @@ class MyDistribution:
 if __name__ == "__main__":
     import random
 
-    dnest4 = random.Random()
+    # dnest4 = random.Random()
     distribution = MyDistribution()
 
     distribution.from_prior(None)

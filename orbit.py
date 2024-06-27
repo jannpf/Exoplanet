@@ -1,5 +1,7 @@
 import math
+import numpy as np
 import sys
+
 
 class Orbit:
     def __init__(self):
@@ -8,7 +10,7 @@ class Orbit:
 
     def load(self, filename):
         try:
-            with open(filename, 'r') as fin:
+            with open(filename, "r") as fin:
                 lines = fin.readlines()
                 for line in lines:
                     temp1, temp2 = map(float, line.split())
@@ -20,51 +22,40 @@ class Orbit:
             sys.exit(1)
 
     def evaluate(self, arg_to_cos, viewing_angle):
-        vr = []
-        vrmax = -1E300
-        vrmin = 1E300
-        highest = 0
-
         C = math.cos(viewing_angle)
         S = math.sin(viewing_angle)
+        vr = [C * x + S * y for x, y in zip(self.vx, self.vy)]
 
-        for i in range(len(self.vx)):
-            vr_value = C * self.vx[i] + S * self.vy[i]
-            vr.append(vr_value)
-            if vr_value > vrmax:
-                vrmax = vr_value
-            if vr_value < vrmin:
-                vrmin = vr_value
-            if vr_value > vr[highest]:
-                highest = i
+        vrmax = max(vr)
+        vrmin = min(vr)
+        highest = vr.index(vrmax)
 
-        for i in range(len(vr)):
-            vr[i] = 2 * (vr[i] - vrmin) / (vrmax - vrmin) - 1
+        # Normalize vr
+        vr = [2 * (v - vrmin) / (vrmax - vrmin) - 1 for v in vr]
 
-        result = []
-        for arg in arg_to_cos:
-            index = int(len(vr) * (arg + 2 * math.pi * highest / len(vr)) / (2 * math.pi))
-            try:
-                result.append(vr[index])
-            except:
-                pass
+        result = list(arg_to_cos)
+        cc = 2.0 * math.pi * highest / len(vr)
+        for i in range(len(result)):
+            index = int(
+                len(vr)
+                * (self._mod(arg_to_cos[i] + cc, 2.0 * math.pi) / (2.0 * math.pi))
+            )
+            result[i] = vr[index]
 
         return result
+
+    def _mod(self, a, b):
+        return a - b * math.floor(a / b)
 
     @staticmethod
     def test():
         o = Orbit()
-        o.load("Orbits/orbits0.710.dat")
+        o.load("artifacts/orbits0.710.dat")
 
-        t = []
-        tt = -10.0
-        while tt <= 10.0:
-            t.append(tt)
-            tt += 0.01
-
+        t = [tt for tt in np.arange(-10, 10.01, 0.01)]
         y = o.evaluate(t, 1.0)
-        for i in range(len(y)):
-            print(t[i], y[i])
+        for ti, yi in zip(t, y):
+            print(ti, yi)
 
 
 if __name__ == "__main__":
