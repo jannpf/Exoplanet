@@ -5,10 +5,13 @@
 #include <gsl/gsl_sf_gamma.h>
 
 using namespace std;
+using namespace Eigen;
 
 MyModel::MyModel()
 :objects(5, 10, false, MyDistribution())
 ,mu(Data::get_instance().get_t().size())
+,C(Data::get_instance().get_t().size(),
+			Data::get_instance().get_t().size())
 {
 
 }
@@ -20,8 +23,42 @@ void MyModel::from_prior(DNest4::RNG& rng)
 	background = Data::get_instance().get_y_min() +
 		(Data::get_instance().get_y_max() - Data::get_instance().get_y_min())*rng.rand();
 	extra_sigma = exp(tan(M_PI*(0.97*rng.rand() - 0.485)));
-	nu = exp(log(0.1) + log(1000.)*rng.rand());
+
+	// Log-uniform prior from 10^(-2) to 10^2 m/s
+	eta1 = exp(log(1E-2) + log(1E4)*rng.rand());
+
+	// Log-uniform prior from 10^(-3) to 10 years
+	eta2 = exp(log(1E-3) + log(1E4)*rng.rand());
+
+	// Log-uniform prior from 1 day to 100 days
+	eta3 = exp(log(1.) + log(1E2)*rng.rand());
+
+	// Log-uniform prior from 10^(-3) to 10 years
+	eta4 = exp(log(1E-3) + log(1E4)*rng.rand());
+
 	calculate_mu();
+	calculate_C();
+}
+
+void MyModel::calculate_C()
+{
+	// Get the data
+	const vector<double>& t = Data::get_instance().get_t();
+	const vector<double>& sig = Data::get_instance().get_sig();
+
+	for(size_t i=0; i<Data::get_instance().get_t().size(); i++)
+	{
+		for(size_t j=i; j<Data::get_instance().get_t().size(); j++)
+		{
+			C(i, j) = eta1*eta1*exp(-0.5*pow((t[i] - t[j])/eta2, 2) 
+				                    -2.0*pow(sin(M_PI*(t[i] - t[j])/eta3)/eta4, 2) );
+
+			if(i==j)
+				C(i, j) += sig[i]*sig[i] + extra_sigma*extra_sigma;
+			else
+				C(j, i) = C(i, j);
+		}
+	}
 }
 
 void MyModel::calculate_mu()
@@ -83,10 +120,35 @@ double MyModel::perturb(DNest4::RNG& rng)
 		extra_sigma = tan(M_PI*(0.97*extra_sigma - 0.485));
 		extra_sigma = exp(extra_sigma);
 
-		nu = log(nu);
-		nu += log(1000.)*rng.randh();
-		DNest4::wrap(nu, log(0.1), log(1000.));
-		nu = exp(nu);
+		if(rng.rand() <= 0.25)
+		{
+			eta1 = log(eta1);
+			eta1 += log(1E4)*rng.randh();
+			DNest4::wrap(eta1, log(1E-2), log(1E2));
+			eta1 = exp(eta1);
+		}
+		else if(rng.rand() <= 0.33330)
+		{
+			eta2 = log(eta2);
+			eta2 += log(1E4)*rng.randh();
+			DNest4::wrap(eta2, log(1E-3), log(1E1));
+			eta2 = exp(eta2);
+		}
+		else if(rng.rand() <= 0.5)
+		{
+			eta3 = log(eta3);
+			eta3 += log(1E2)*rng.randh();
+			DNest4::wrap(eta3, log(1.), log(1E2));
+			eta3 = exp(eta3);
+		}
+		else
+		{
+			eta4 = log(eta4);
+			eta4 += log(1E4)*rng.randh();
+			DNest4::wrap(eta4, log(1E-3), log(1E1));
+			eta4 = exp(eta4);
+		}
+		calculate_C();
 	}
 	else
 	{
@@ -107,17 +169,31 @@ double MyModel::log_likelihood() const
 {
 	// Get the data
 	const vector<double>& y = Data::get_instance().get_y();
-	const vector<double>& sig = Data::get_instance().get_sig();
 
-	double logL = 0.;
-	double var;
+	VectorXd residual(y.size());
 	for(size_t i=0; i<y.size(); i++)
-	{
-		var = sig[i]*sig[i] + extra_sigma*extra_sigma;
-		logL += gsl_sf_lngamma(0.5*(nu + 1.)) - gsl_sf_lngamma(0.5*nu)
-			- 0.5*log(M_PI*nu) - 0.5*log(var)
-			- 0.5*(nu + 1.)*log(1. + pow(y[i] - mu[i], 2)/var/nu);
-	}
+		residual(i) = y[i] - mu[i];
+	
+	Eigen::LLT<Eigen::MatrixXd> cholesky = C.llt();
+	MatrixXd L = cholesky.matrixL();
+
+	double logDeterminant = 0.;
+	for(size_t i=0; i<y.size(); i++)
+		logDeterminant += 2.*log(L(i,i));
+
+	// C^-1*(y-mu)
+	VectorXd solution = cholesky.solve(residual);
+
+	// y*solution
+	double exponent = 0.;
+	for(size_t i=0; i<y.size(); i++)
+		exponent += residual(i)*solution(i);
+
+	double logL = -0.5*y.size()*log(2*M_PI)
+					- 0.5*logDeterminant - 0.5*exponent;
+
+	if(std::isnan(logL) || std::isinf(logL))
+		logL = -1E300;
 
 	return logL;
 }
@@ -163,7 +239,7 @@ void MyModel::print(std::ostream& out) const
 
 	for(size_t i=0; i<signal.size(); i++)
 		out<<signal[i]<<' ';
-	out<<extra_sigma<<' '<<nu<<' ';
+	out<<extra_sigma<<' '<<eta1<<' '<<eta2<<' '<<eta3<<' '<<eta4<<' ';
 	objects.print(out); out<<' '<<staleness<<' ';
 	out<<background<<' ';
 }
