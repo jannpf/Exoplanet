@@ -6,14 +6,14 @@ import pylab
 pylab.rc("font", size=14, family="serif", serif="Computer Sans")
 pylab.rc("text")
 
-data = pylab.loadtxt("new_data.txt")
+data = pylab.loadtxt("../new_data.txt")
 # truth = pylab.loadtxt("fake_data_like_nuoph.truth")
 posterior_sample = pylab.atleast_2d(dn4.my_loadtxt("posterior_sample.txt"))
 print(posterior_sample.shape)
 
 width = 0.5
 pylab.hist(
-    posterior_sample[:, 1007],
+    posterior_sample[:, 1010],
     bins=pylab.arange(0, 11) - 0.5 * width,
     width=width,
     color="k",
@@ -24,9 +24,14 @@ pylab.ylabel("Number of Posterior Samples")
 pylab.xlim([-0.5, 10.5])
 pylab.show()
 
-T = posterior_sample[:, 1008:1018]
-A = posterior_sample[:, 1018:1028]
-E = posterior_sample[:, 1038:1048]
+T = posterior_sample[:, 1011:1021]
+A = posterior_sample[:, 1021:1031]
+E = posterior_sample[:, 1041:1051]
+# print(T)
+# print(A)
+# print(E)
+# import sys
+# sys.exit(1)
 which = T != 0
 T = T[which].flatten()
 A = A[which].flatten()
@@ -37,7 +42,7 @@ E = E[which].flatten()
 # iqr = right - left
 # s = s[logical_and(s > middle - 5*iqr, s < middle + 5*iqr)]
 
-pylab.hist(T / pylab.log(10.0), bins=3000, alpha=0.2, color="k")
+pylab.hist(T / pylab.log(10.0), bins=500, alpha=0.2, color="k")
 pylab.xlabel(r"$\log_{10}$(Period/days)")
 pylab.xlim([1, 5])
 # for i in range(1008, 1008 + int(truth[1007])):
