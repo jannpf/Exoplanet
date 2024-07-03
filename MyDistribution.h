@@ -15,6 +15,11 @@ class MyDistribution:public DNest4::ConditionalPrior
 		// Mean of exponential distribution for amplitudes
 		double mu;
 
+		double cauchy(double x, double center, double scaler);
+		double cauchy_sample(DNest4::RNG& rng, double center, double scaler);
+		double gaussian_sample(DNest4::RNG& rng, double mean, double sigma);
+		double perturb_cauchy(DNest4::RNG& rng, double sample, double center, double scaler);
+		double perturb_gaussian(DNest4::RNG& rng, double sample, double mean, double sigma, double perturb_sigma);
 	public:
 		MyDistribution();
 

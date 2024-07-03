@@ -6,12 +6,72 @@ MyDistribution::MyDistribution()
 
 }
 
+double MyDistribution::cauchy(double x, double center, double scaler)
+{
+	return center + scaler * tan(M_PI*(0.97*x - 0.485));
+}
+
+/// @brief Generate random sample from a cauchy distribution
+/// @param rng Random number generator
+/// @param center Center of the distribution
+/// @param scaler Scaler of the distribution
+/// @return sample
+double MyDistribution::cauchy_sample(DNest4::RNG& rng, double center = 0, double scaler = 1) 
+{
+	return cauchy(rng.rand(), center, scaler);
+}
+
+/// @brief Generate random sample from a gaussian distribution
+/// @param rng Random number generator
+/// @param mean Expected value of the gaussian
+/// @param sigma Std dev of the gaussian
+/// @return sample
+double MyDistribution::gaussian_sample(DNest4::RNG& rng, double mean = 0, double sigma = 1) 
+{
+	// generate gaussian sample with Box-Muller transform
+	double u1 = rng.rand();
+	double u2 = rng.rand();
+	double z = std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * M_PI * u2);
+	return z * sigma + mean;
+}
+
+/// @brief Randomly perturb a sample from a cauchy distribution, preserving distribution characteristics
+/// @param rng Random number generator
+/// @param sample Original sample
+/// @param center Original center
+/// @param scaler Original scaler
+/// @return Perturbed sample
+double MyDistribution::perturb_cauchy(DNest4::RNG& rng, double sample, double center = 0, double scaler = 1)
+{
+	// inverse cauchy to retrieve original random number
+	double orig_rn = (atan((sample - center)/scaler)/M_PI + 0.485)/0.97;
+	double new_rn = orig_rn + rng.randh();
+	DNest4::wrap(new_rn, 0., 1.);
+	return cauchy(new_rn, center, scaler);
+}
+
+/// @brief Randomly perturb a sample from a normal distribution, preserving distribution characteristics
+/// @param rng Random number generator
+/// @param sample Original sample
+/// @param mean Original expected value
+/// @param sigma Original std dev
+/// @param perturb_sigma Additional std dev for the perturbation
+/// @return Perturbed sample
+double MyDistribution::perturb_gaussian(DNest4::RNG& rng, double sample, double mean = 0, double sigma = 1, double perturb_sigma = 1)
+{
+	double perturbation = gaussian_sample(rng, 0, perturb_sigma);
+	double perturbed_sample = sample + perturbation;
+	// ensure the same mu and sigma for the returned sample
+	return mean + (perturbed_sample - mean) * (sigma / std::sqrt(pow(sigma, 2) + pow(perturb_sigma, 2)));
+}
+
 void MyDistribution::from_prior(DNest4::RNG& rng)
 {
 	// Cauchy prior centered on 5.901 = log(365 days).
-	center = 5.901 + tan(M_PI*(0.97*rng.rand() - 0.485));
+	// center = 5.901 + tan(M_PI*(0.97*rng.rand() - 0.485));
+	center = cauchy_sample(rng, 5.901);
 	width = 0.1 + 2.9*rng.rand();
-	mu = exp(tan(M_PI*(0.97*rng.rand() - 0.485)));
+	mu = exp(cauchy_sample(rng));
 }
 
 double MyDistribution::perturb_hyperparameters(DNest4::RNG& rng)
@@ -22,10 +82,7 @@ double MyDistribution::perturb_hyperparameters(DNest4::RNG& rng)
 
 	if(which == 0)
 	{
-		center = (atan(center - 5.901)/M_PI + 0.485)/0.97;
-		center += rng.randh();
-		DNest4::wrap(center, 0., 1.);
-		center = 5.901 + tan(M_PI*(0.97*center - 0.485));
+		center = perturb_cauchy(rng, center, 5.901);
 	}
 	else if(which == 1)
 	{
@@ -35,10 +92,7 @@ double MyDistribution::perturb_hyperparameters(DNest4::RNG& rng)
 	else
 	{
 		mu = log(mu);
-		mu = (atan(mu)/M_PI + 0.485)/0.97;
-		mu += rng.randh();
-		DNest4::wrap(mu, 0., 1.);
-		mu = tan(M_PI*(0.97*mu - 0.485));
+		mu = perturb_cauchy(rng, mu);
 		mu = exp(mu);
 	}
 	return logH;
