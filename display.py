@@ -5,8 +5,11 @@ import dnest4.classic as dn4
 rc("font", size=14, family="serif", serif="Computer Sans")
 rc("text", usetex=True)
 
-# data = loadtxt('HIP_14810.txt')
-data = loadtxt('hd191939.txt')
+star = 'hd191939'
+# star = 'hip14810'
+# star = 'corot7'
+
+data = loadtxt(f'{star}.txt')
 # truth = loadtxt('fake_data_like_nuoph.truth')
 posterior_sample = atleast_2d(dn4.my_loadtxt('posterior_sample.txt'))
 
@@ -35,22 +38,51 @@ hist(T/log(10.), 500, alpha=0.4, color="k")
 xlabel(r'$\log_{10}$(Period/days)')
 xlim([0, 5])
 
-true_periods = [
-  8.8803256, # hd191939
-  28.579743, # hd191939
-  38.353037, # hd191939
-  101.12, # hd191939
-  284, # hd191939
-  2200 # hd191939
-  # 6.67, # hip 14810
-  # 147.7, # hip 14810
-  # 952, # hip 14810
-  # 0.853592, # corot-7
-  # 3.697, # corot-7
-  # 8.966 # corot-7
-]
-for p in true_periods:
-  axvline(log(p)/log(10.), color='g')
+true_periods = {
+  'hd191939': [
+    8.8803256, # hd191939
+    28.579743, # hd191939
+    38.353037, # hd191939
+    101.12, # hd191939
+    284, # hd191939
+    2200 # hd191939
+  ],
+  'hip14810': [
+    6.67, # hip 14810
+    147.7, # hip 14810
+    952, # hip 14810
+  ],
+  'corot7': [
+    0.853592, # corot-7
+    3.697, # corot-7
+    8.966 # corot-7
+  ]
+}
+
+true_eccs = {
+  'hd191939': [
+    0.031, # hd191939
+    0.034, # hd191939
+    0.031, # hd191939
+    0.031, # hd191939
+    0.030, # hd191939
+    nan # 2200 # hd191939 # no data
+  ],
+  'hip14810': [
+    0.14399, # hip 14810
+    0.1566, # hip 14810
+    0.185, # hip 14810
+  ],
+  'corot7': [
+    0, # corot-7
+    0, # corot-7
+    0, # corot-7
+  ]
+}
+
+if star in true_periods.keys():
+  for p in true_periods[star]:
+    axvline(log(p)/log(10.), color='g')
 ylabel('Number of Posterior Samples')
 get_current_fig_manager().set_window_title(os.path.dirname(os.path.realpath(__file__)))
 show()
@@ -63,7 +95,7 @@ ylabel(r'$\log_{10}$[Amplitude (m/s)$]$')
 plot(T/log(10.), log10(A), 'g.', markersize=1)
 
 subplot(2,1,2)
-# plot(truth[1008:1008 + int(truth[1007])]/log(10.), truth[1038:1038 + int(truth[1007])], 'ko', markersize=7, alpha=0.5)
+plot(log(true_periods[star])/log(10.), true_eccs[star], 'ko', markersize=7, alpha=0.5)
 xlim([0, 5])
 xlabel(r'$\log_{10}$(Period/days)')
 ylabel('Eccentricity')
