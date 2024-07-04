@@ -82,7 +82,7 @@ true_eccs = {
 
 if star in true_periods.keys():
   for p in true_periods[star]:
-    axvline(log(p)/log(10.), color='g', alpha=0.8)
+    axvline(log(p)/log(10.), color='g', alpha=0.5)
 ylabel('Number of Posterior Samples')
 get_current_fig_manager().set_window_title(os.path.dirname(os.path.realpath(__file__)))
 show()
