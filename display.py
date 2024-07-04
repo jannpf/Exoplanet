@@ -34,7 +34,7 @@ E = E[which].flatten()
 #iqr = right - left
 #s = s[logical_and(s > middle - 5*iqr, s < middle + 5*iqr)]
 
-hist(T/log(10.), 500, alpha=0.4, color="k")
+hist(T/log(10.), 500, alpha=0.8, color="k")
 xlabel(r'$\log_{10}$(Period/days)')
 xlim([0, 5])
 
@@ -82,7 +82,7 @@ true_eccs = {
 
 if star in true_periods.keys():
   for p in true_periods[star]:
-    axvline(log(p)/log(10.), color='g')
+    axvline(log(p)/log(10.), color='g', alpha=0.8)
 ylabel('Number of Posterior Samples')
 get_current_fig_manager().set_window_title(os.path.dirname(os.path.realpath(__file__)))
 show()
