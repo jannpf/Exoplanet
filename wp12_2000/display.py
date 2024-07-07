@@ -34,7 +34,7 @@ E = E[which].flatten()
 #iqr = right - left
 #s = s[logical_and(s > middle - 5*iqr, s < middle + 5*iqr)]
 
-hist(T/log(10.), 500, alpha=0.4, color="k")
+hist(T/log(10.), 1500, alpha=0.4, color="k")
 xlabel(r'$\log_{10}$(Period/days)')
 xlim([0, 5])
 
