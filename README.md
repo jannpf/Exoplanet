@@ -1,3 +1,7 @@
+## General
+
+This branch contains modified code to handle gaussian quasiperiodic noise to account for stellar activity. Experimental results for nu oph are also present.
+
 ## Prerequisites
 * Configured c++ environment (g++/gcc etc.). You also need to clone [DNest4](https://github.com/eggplantbren/DNest4), then build it by executing make in the `code` directory. `gsl` library also needs to be installed.
 * Update Makefile with correct full paths to dnest4 and gsl libraries.
