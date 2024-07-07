@@ -9,7 +9,7 @@ star = 'hd142'
 # star = 'hip14810'
 # star = 'corot7'
 
-data = loadtxt("../new_data.txt")
+data = loadtxt("../../hd142.txt")
 # truth = loadtxt('fake_data_like_nuoph.truth')
 posterior_sample = atleast_2d(dn4.my_loadtxt('posterior_sample.txt'))
 

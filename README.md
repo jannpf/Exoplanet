@@ -1,3 +1,8 @@
+## General
+
+This branch contains somewhat annotated and commented c++ code and results
+
+
 ## Prerequisites
 * Configured c++ environment (g++/gcc etc.). You also need to clone [DNest4](https://github.com/eggplantbren/DNest4), then build it by executing make in the `code` directory. `gsl` library also needs to be installed.
 * Update Makefile with correct full paths to dnest4 and gsl libraries.
@@ -11,4 +16,4 @@
 ## Available datasets
 1. `nu_oph.txt`
 2. `fake_data_like_nu_oph.txt`. True rv values are also available
-3. `new_data.txt` (HD 142)
+3. `hd142.txt` (HD 142)

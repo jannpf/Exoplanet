@@ -6,7 +6,7 @@ import pylab
 pylab.rc("font", size=14, family="serif", serif="Computer Sans")
 pylab.rc("text")
 
-data = pylab.loadtxt("new_data.txt")
+data = pylab.loadtxt("hd142.txt")
 # truth = pylab.loadtxt("fake_data_like_nuoph.truth")
 posterior_sample = pylab.atleast_2d(dn4.my_loadtxt("posterior_sample.txt"))
 
