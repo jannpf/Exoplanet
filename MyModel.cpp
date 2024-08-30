@@ -105,7 +105,7 @@ double MyModel::perturb(DNest4::RNG& rng)
 {
 	double logH = 0.;
 
-	if(rng.rand() <= 0.75)
+	if(rng.rand() <= 0.5)
 	{
 		logH += objects.perturb(rng);
 		objects.consolidate_diff();

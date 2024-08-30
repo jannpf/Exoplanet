@@ -8,7 +8,8 @@ using namespace std;
 int main(int argc, char** argv)
 {
 	// Load the data and lookup tables
-	Data::get_instance().load("fake_data_like_nuoph.txt");
+	// Data::get_instance().load("fake_data_like_nuoph.txt");
+	Data::get_instance().load("corot7.txt");
 	Lookup::get_instance().load();
 
     DNest4::start<MyModel>(argc, argv);

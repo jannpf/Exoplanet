@@ -14,7 +14,7 @@ data = loadtxt(f'{star}.txt')
 posterior_sample = atleast_2d(dn4.my_loadtxt('posterior_sample.txt'))
 
 width=0.5
-hist(posterior_sample[:,1007], bins=arange(0, 11)-0.5*width, width=width, color="k", alpha=0.2)
+hist(posterior_sample[:,1010], bins=arange(0, 11)-0.5*width, width=width, color="k", alpha=0.2)
 xlabel('Number of Planets')
 ylabel('Number of Posterior Samples')
 xlim([-0.5, 10.5])
@@ -34,9 +34,9 @@ E = E[which].flatten()
 #iqr = right - left
 #s = s[logical_and(s > middle - 5*iqr, s < middle + 5*iqr)]
 
-hist(T/log(10.), 500, alpha=0.8, color="k")
+hist(T/log(10.), 500, alpha=0.4, color="k")
 xlabel(r'$\log_{10}$(Period/days)')
-xlim([0, 5])
+xlim([-0.5, 5])
 
 true_periods = {
   'hd191939': [
@@ -82,21 +82,21 @@ true_eccs = {
 
 if star in true_periods.keys():
   for p in true_periods[star]:
-    axvline(log(p)/log(10.), color='g', alpha=0.5)
+    axvline(log(p)/log(10.), color='g')
 ylabel('Number of Posterior Samples')
 get_current_fig_manager().set_window_title(os.path.dirname(os.path.realpath(__file__)))
 show()
 
 subplot(2,1,1)
 # plot(truth[1008:1008 + int(truth[1007])]/log(10.), log10(truth[1018:1018 + int(truth[1007])]), 'ko', markersize=7, alpha=0.5)
-xlim([0, 5])
+xlim([-0.5, 5])
 ylim([-1, 4])
 ylabel(r'$\log_{10}$[Amplitude (m/s)$]$')
 plot(T/log(10.), log10(A), 'g.', markersize=1)
 
 subplot(2,1,2)
 plot(log(true_periods[star])/log(10.), true_eccs[star], 'ko', markersize=7, alpha=0.5)
-xlim([0, 5])
+xlim([-0.5, 5])
 xlabel(r'$\log_{10}$(Period/days)')
 ylabel('Eccentricity')
 plot(T/log(10.), E, 'g.', markersize=1)

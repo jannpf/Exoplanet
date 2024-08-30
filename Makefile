@@ -1,5 +1,6 @@
 CFLAGS = -std=c++11 -O3 -DNDEBUG -Wall -Wextra -pedantic
 LIBS = -ldnest4 -lgsl -lgslcblas
+DNEST4_PATH = /home/jann/pm
 
 default:
 	g++ $(CFLAGS) -I$(DNEST4_PATH) -c *.cpp
